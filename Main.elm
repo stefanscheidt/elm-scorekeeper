@@ -124,18 +124,53 @@ view model =
         ]
 
 
-playerRow : Player -> Html Msg
-playerRow player =
-    div []
-        [ button [ type_ "button", onClick (Edit player) ] [ text "Edit" ]
-        , span [] [ text player.name ]
-        ]
-
-
 playersList : Model -> Html Msg
 playersList model =
     div []
-        [ li [] (List.map playerRow model.players)
+        [ playersListHeader
+        , playersListRows model
+        , playersListFooter model
+        ]
+
+
+playersListHeader : Html Msg
+playersListHeader =
+    header []
+        [ div [] [ text "Name" ]
+        , div [] [ text "Points" ]
+        ]
+
+
+playersListRows : Model -> Html Msg
+playersListRows model =
+    model.players
+        |> List.sortBy .name
+        |> List.map playerRow
+        |> ul []
+
+
+playersListFooter : Model -> Html Msg
+playersListFooter model =
+    let
+        total =
+            model.players
+                |> List.map .points
+                |> List.sum
+    in
+        footer []
+            [ div [] [ text "Total: " ]
+            , div [] [ text (toString total) ]
+            ]
+
+
+playerRow : Player -> Html Msg
+playerRow player =
+    li []
+        [ i [ class "edit", onClick (Edit player) ] []
+        , div [] [ text player.name ]
+        , button [ type_ "button", onClick (Score player 2) ] [ text "2pt" ]
+        , button [ type_ "button", onClick (Score player 3) ] [ text "3pt" ]
+        , div [] [ text (toString player.points) ]
         ]
 
 
