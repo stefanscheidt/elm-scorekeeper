@@ -86,6 +86,7 @@ score : Model -> Player -> Int -> Model
 score model player points =
     model
         |> updatePlayer player.id (\p -> { p | points = p.points + points })
+        |> addPlay player points
 
 
 updatePlayer : Int -> (Player -> Player) -> Model -> Model
@@ -102,6 +103,19 @@ updatePlayer id updateFn model =
                     )
     in
         { model | players = newPlayers }
+
+
+addPlay : Player -> Int -> Model -> Model
+addPlay player points model =
+    let
+        newPlay =
+            { id = (List.length model.plays) + 1
+            , playerId = player.id
+            , name = player.name
+            , score = points
+            }
+    in
+        { model | plays = newPlay :: model.plays }
 
 
 updatePlays : Int -> (Play -> Play) -> Model -> Model
