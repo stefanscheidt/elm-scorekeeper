@@ -76,29 +76,48 @@ add model =
 
 edit : Model -> Int -> Model
 edit model id =
-    updatePlayer model id (\p -> { p | name = model.name })
+    model
+        |> updatePlayer id (\player -> { player | name = model.name })
+        |> updatePlays id (\play -> { play | name = model.name })
         |> resetInput
 
 
 score : Model -> Player -> Int -> Model
 score model player points =
-    updatePlayer model player.id (\p -> { p | points = p.points + points })
+    model
+        |> updatePlayer player.id (\p -> { p | points = p.points + points })
 
 
-updatePlayer : Model -> Int -> (Player -> Player) -> Model
-updatePlayer model id updateFn =
+updatePlayer : Int -> (Player -> Player) -> Model -> Model
+updatePlayer id updateFn model =
     let
         newPlayers =
             model.players
                 |> List.map
-                    (\p ->
-                        if p.id == id then
-                            updateFn p
+                    (\player ->
+                        if player.id == id then
+                            updateFn player
                         else
-                            p
+                            player
                     )
     in
         { model | players = newPlayers }
+
+
+updatePlays : Int -> (Play -> Play) -> Model -> Model
+updatePlays playerId updateFn model =
+    let
+        newPlays =
+            model.plays
+                |> List.map
+                    (\play ->
+                        if play.playerId == playerId then
+                            updateFn play
+                        else
+                            play
+                    )
+    in
+        { model | plays = newPlays }
 
 
 update : Msg -> Model -> Model
@@ -160,7 +179,7 @@ playersList model =
                 [ div [] [ text "Name" ]
                 , div [] [ text "Ponts" ]
                 ]
-            , ul [] (List.map playerRow model.players)
+            , ul [] (model.players |> List.sortBy .name |> List.map playerRow)
             , footer []
                 [ div [] [ text "Total: " ]
                 , div [] [ text (toString total) ]
