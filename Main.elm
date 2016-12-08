@@ -76,19 +76,29 @@ add model =
 
 edit : Model -> Int -> Model
 edit model id =
+    updatePlayer model id (\p -> { p | name = model.name })
+        |> resetInput
+
+
+score : Model -> Player -> Int -> Model
+score model player points =
+    updatePlayer model player.id (\p -> { p | points = p.points + points })
+
+
+updatePlayer : Model -> Int -> (Player -> Player) -> Model
+updatePlayer model id updateFn =
     let
         newPlayers =
-            List.map
-                (\player ->
-                    if player.id == id then
-                        { player | name = model.name }
-                    else
-                        player
-                )
-                model.players
+            model.players
+                |> List.map
+                    (\p ->
+                        if p.id == id then
+                            updateFn p
+                        else
+                            p
+                    )
     in
         { model | players = newPlayers }
-            |> resetInput
 
 
 update : Msg -> Model -> Model
@@ -105,6 +115,9 @@ update msg model =
                 save model
             else
                 model
+
+        Score player points ->
+            score model player points
 
         Cancel ->
             model
@@ -126,17 +139,33 @@ view model =
 
 playerRow : Player -> Html Msg
 playerRow player =
-    div []
-        [ button [ type_ "button", onClick (Edit player) ] [ text "Edit" ]
-        , span [] [ text player.name ]
+    li []
+        [ i [ class "edit", onClick (Edit player) ] []
+        , div [] [ text player.name ]
+        , button [ type_ "button", onClick (Score player 2) ] [ text "2pt" ]
+        , button [ type_ "button", onClick (Score player 3) ] [ text "3pt" ]
+        , div [] [ text (toString player.points) ]
         ]
 
 
 playersList : Model -> Html Msg
 playersList model =
-    div []
-        [ li [] (List.map playerRow model.players)
-        ]
+    let
+        total =
+            List.map .points model.players
+                |> List.sum
+    in
+        div []
+            [ header []
+                [ div [] [ text "Name" ]
+                , div [] [ text "Ponts" ]
+                ]
+            , ul [] (List.map playerRow model.players)
+            , footer []
+                [ div [] [ text "Total: " ]
+                , div [] [ text (toString total) ]
+                ]
+            ]
 
 
 playerForm : Model -> Html Msg
