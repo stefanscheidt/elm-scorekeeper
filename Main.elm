@@ -89,6 +89,33 @@ score model player points =
         |> addPlay player points
 
 
+addPlay : Player -> Int -> Model -> Model
+addPlay player points model =
+    let
+        newPlay =
+            { id = (List.length model.plays) + 1
+            , playerId = player.id
+            , name = player.name
+            , score = points
+            }
+    in
+        { model | plays = newPlay :: model.plays }
+
+
+deletePlay : Model -> Play -> Model
+deletePlay model play =
+    let
+        updatePlayerFn =
+            (\player -> { player | points = player.points - play.score })
+
+        newPlays =
+            List.filter (\p -> p.id /= play.id) model.plays
+    in
+        model
+            |> updatePlayer play.playerId updatePlayerFn
+            |> (\m -> { m | plays = newPlays })
+
+
 updatePlayer : Int -> (Player -> Player) -> Model -> Model
 updatePlayer id updateFn model =
     let
@@ -103,19 +130,6 @@ updatePlayer id updateFn model =
                     )
     in
         { model | players = newPlayers }
-
-
-addPlay : Player -> Int -> Model -> Model
-addPlay player points model =
-    let
-        newPlay =
-            { id = (List.length model.plays) + 1
-            , playerId = player.id
-            , name = player.name
-            , score = points
-            }
-    in
-        { model | plays = newPlay :: model.plays }
 
 
 updatePlays : Int -> (Play -> Play) -> Model -> Model
@@ -156,8 +170,8 @@ update msg model =
             model
                 |> resetInput
 
-        _ ->
-            model
+        DeletePlay play ->
+            deletePlay model play
 
 
 view : Model -> Html Msg
@@ -166,15 +180,16 @@ view model =
         [ h1 [] [ text "Score Keeper" ]
         , playersList model
         , playerForm model
+        , playsList model
         , p [] [ toString model |> text ]
         ]
 
 
-playerRow : Player -> Html Msg
-playerRow player =
+playerRow : Model -> Player -> Html Msg
+playerRow model player =
     li []
         [ i [ class "edit", onClick (Edit player) ] []
-        , div [] [ text player.name ]
+        , div [ class (playerNameStyle model player) ] [ text player.name ]
         , button [ type_ "button", onClick (Score player 2) ] [ text "2pt" ]
         , button [ type_ "button", onClick (Score player 3) ] [ text "3pt" ]
         , div [] [ text (toString player.points) ]
@@ -193,7 +208,7 @@ playersList model =
                 [ div [] [ text "Name" ]
                 , div [] [ text "Ponts" ]
                 ]
-            , ul [] (model.players |> List.sortBy .name |> List.map playerRow)
+            , ul [] (model.players |> List.sortBy .name |> List.map (playerRow model))
             , footer []
                 [ div [] [ text "Total: " ]
                 , div [] [ text (toString total) ]
@@ -206,14 +221,59 @@ playerForm model =
     Html.form [ onSubmit Save ]
         [ input
             [ type_ "text"
+            , class (playerInputStyle model)
             , placeholder "Add/Edit Player"
             , onInput Input
             , value model.name
+            , autofocus True
             ]
             []
         , button [ type_ "submit", disabled (model.name == "") ] [ text "Save" ]
         , button [ type_ "button", disabled (model.name == ""), onClick Cancel ] [ text "Cancel" ]
         ]
+
+
+playRow : Play -> Html Msg
+playRow play =
+    li []
+        [ i [ class "remove", onClick (DeletePlay play) ] []
+        , div [] [ text play.name ]
+        , div [] [ text (toString play.score) ]
+        ]
+
+
+playsList : Model -> Html Msg
+playsList model =
+    div []
+        [ header []
+            [ div [] [ text "Name" ]
+            , div [] [ text "Score" ]
+            ]
+        , ul [] (List.map playRow model.plays)
+        ]
+
+
+playerNameStyle : Model -> Player -> String
+playerNameStyle model player =
+    case model.playerId of
+        Just id ->
+            if id == player.id then
+                "edit"
+            else
+                ""
+
+        Nothing ->
+            ""
+
+
+playerInputStyle : Model -> String
+playerInputStyle model =
+    case model.playerId of
+        Just id ->
+            "edit"
+
+        Nothing ->
+            ""
 
 
 main : Program Never Model Msg
