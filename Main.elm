@@ -107,13 +107,9 @@ deletePlay model play =
     let
         updatePlayerFn =
             (\player -> { player | points = player.points - play.score })
-
-        newPlays =
-            List.filter (\p -> p.id /= play.id) model.plays
     in
-        model
+        { model | plays = List.filter (\p -> p.id /= play.id) model.plays }
             |> updatePlayer play.playerId updatePlayerFn
-            |> (\m -> { m | plays = newPlays })
 
 
 updatePlayer : Int -> (Player -> Player) -> Model -> Model
@@ -181,7 +177,6 @@ view model =
         , playersList model
         , playerForm model
         , playsList model
-        , p [] [ toString model |> text ]
         ]
 
 
@@ -206,7 +201,7 @@ playersList model =
         div []
             [ header []
                 [ div [] [ text "Name" ]
-                , div [] [ text "Ponts" ]
+                , div [] [ text "Points" ]
                 ]
             , ul [] (model.players |> List.sortBy .name |> List.map (playerRow model))
             , footer []
